@@ -28,27 +28,39 @@ steps:
           environment:
             - BUILD_PKG_TARGET=x86_64-linux
   
-  - label: "[:linux: :two: build hab]"
+  # - label: "[:linux: :two: build hab]"
+  #   command:
+  #     - .expeditor/scripts/build_component.sh hab
+  #   expeditor:
+  #     executor:
+  #       docker:
+  #         privileged: true
+  #         environment:
+  #           - BUILD_PKG_TARGET=x86_64-linux-kernel2
+
+  # - label: "[:windows: build hab]"
+  #   command:
+  #     - powershell .expeditor/scripts/build_component.ps1 hab
+  #   expeditor:
+  #     executor:
+  #       docker:
+  #         host_os: windows
+  #         os_version: 2016
+  #         environment:
+  #           - BUILD_PKG_TARGET=x86_64-windows
+  #           - BUILDKITE_AGENT_ACCESS_TOKEN
+
+  - wait
+
+  - label: "[:linux: upload hab binary]"
     command:
-      - .expeditor/scripts/build_component.sh hab
+      - .expeditor/scripts/package_and_upload_binary.sh
     expeditor:
       executor:
         docker:
           privileged: true
           environment:
-            - BUILD_PKG_TARGET=x86_64-linux-kernel2
-
-  - label: "[:windows: build hab]"
-    command:
-      - powershell .expeditor/scripts/build_component.ps1 hab
-    expeditor:
-      executor:
-        docker:
-          host_os: windows
-          os_version: 2016
-          environment:
-            - BUILD_PKG_TARGET=x86_64-windows
-            - BUILDKITE_AGENT_ACCESS_TOKEN
+            - BUILD_PKG_TARGET=x86_64-linux
 
   - wait
 
