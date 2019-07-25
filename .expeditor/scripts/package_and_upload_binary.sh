@@ -16,7 +16,14 @@ echo "--- Channel: $channel - bldr url: $HAB_BLDR_URL"
 
 release_version=$(get_latest_pkg_version_in_channel "hab")
 
-echo "RELEASE: $release_version"
+install_latest_hab_binary "x86_64-linux"
 
+${hab_binary} pkg install core/gzip
+${hab_binary} pkg install core/tar
+${hab_binary} pkg install core/wget
+${hab_binary} pkg install core/zip
 
-
+download_and_repackage_binary
+echo "--- Uploading to S3"
+aws --profile chef-cd s3 cp "$pkg_artifact" "s3://chef-habitat-artifacts/files/habitat/$release_version/$archive_name" --acl public-read
+aws --profile chef-cd s3 cp "$pkg_artifact" "s3://chef-habitat-artifacts/files/habitat/$release_version/$archive_name.sha256sum" --acl public-read

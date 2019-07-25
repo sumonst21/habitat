@@ -56,6 +56,80 @@ install_latest_hab_binary() {
     declare -g hab_binary
 }
 
+download_and_repackage_binary() {
+    tmp_root="$(mktemp -d -t "grant-XXXX")"
+    extract_dir="$tmp_root/extract"
+    mkdir -p $extract_dir
+
+    echo "--- Downloading $release_version for $BUILD_PKG_TARGET"
+    hab pkg exec core/wget wget "${HAB_BLDR_URL}/v1/depot/pkgs/core/hab/$release_version/download?target=$BUILD_PKG_TARGET" -O "$tmp_root/hab-$channel.hart"
+
+    target_hart="$tmp_root/hab-$channel.hart"
+    tail -n+6 "${target_hart}" | \
+        tar --directory "${extract_dir}" \
+            --extract \
+            --xz \
+            --strip-components=6
+
+    if [[ $(find "${extract_dir}" \( -name hab -or -name hab.exe \) -type f | wc -l) -ne 1 ]]; then
+    exit_with "$target_hart did not contain a \`hab' binary" 2
+    fi
+
+    local extracted_hab_binary
+    extracted_hab_binary="$(find "$extract_dir" \( -name hab -or -name hab.exe \) -type f)"
+    pkg_target="$(tr --delete '\r' < "${extract_dir}"/TARGET)"
+    pkg_arch="$(echo "$pkg_target" | cut -d '-' -f 1)"
+    pkg_kernel="$(echo "$pkg_target" | cut -d '-' -f 2)"
+    pkg_ident="$(tr --delete '\r' < "$extract_dir"/IDENT)"
+    pkg_origin="$(echo "$pkg_ident" | cut -d '/' -f 1)"
+    pkg_name="$(echo "$pkg_ident" | cut -d '/' -f 2)"
+    pkg_version="$(echo "$pkg_ident" | cut -d '/' -f 3)"
+    pkg_release="$(echo "$pkg_ident" | cut -d '/' -f 4)"
+    local archive_name build_dir pkg_dir
+    archive_name="hab-$(echo "$pkg_ident" | cut -d '/' -f 3-4 | tr '/' '-')-$pkg_target"
+    build_dir="$tmp_root/build"
+    pkg_dir="$build_dir/${archive_name}"
+
+    echo "Copying $extracted_hab_binary to $(basename "$pkg_dir")"
+    mkdir -p "$pkg_dir"
+    mkdir -p "$tmp_root/results"
+
+    if [[ $pkg_target == *"windows" ]]; then
+    for file in "$(dirname "$extracted_hab_binary")"/*; do 
+        cp -p "$file" "$pkg_dir/"
+    done
+    else
+    cp -p "$extracted_hab_binary" "$pkg_dir/$(basename "$extracted_hab_binary")"
+    fi
+
+    echo "Compressing \`hab' binary"
+    pushd "$build_dir" >/dev/null
+    case "$pkg_target" in
+    *-linux | *-linux-kernel2)
+        pkg_artifact="$tmp_root/results/${archive_name}.tar.gz"
+        local tarball
+        tarball="$build_dir/$(basename "${pkg_artifact%.gz}")"
+        hab pkg exec core/tar tar cf "$tarball" "$(basename "$pkg_dir")"
+        rm -fv "$pkg_artifact"
+        hab pkg exec core/gzip gzip -9 -c "$tarball" > "$pkg_artifact"
+        ;;
+    *-darwin | *-windows)
+        pkg_artifact="$tmp_root/results/${archive_name}.zip"
+        rm -fv "$pkg_artifact"
+        hab pkg exec core/zip zip -9 -r "$pkg_artifact" "$(basename "$pkg_dir")"
+        ;;
+    *)
+        exit_with "$target_hart has unknown TARGET=$pkg_target" 3
+        ;;
+    esac
+    popd >/dev/null
+    pushd "$(dirname "$pkg_artifact")" >/dev/null
+    sha256sum "$(basename "$pkg_artifact")" > "${pkg_artifact}.sha256sum"
+    popd
+    declare -g archive_name
+    declare -g pkg_artifact
+}
+
 get_hab_ident() {
     local target=$1
     buildkite-agent meta-data get "hab-ident-${target}"
