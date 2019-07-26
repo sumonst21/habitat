@@ -85,7 +85,7 @@ download_and_repackage_binary() {
     pkg_name="$(echo "$pkg_ident" | cut -d '/' -f 2)"
     pkg_version="$(echo "$pkg_ident" | cut -d '/' -f 3)"
     pkg_release="$(echo "$pkg_ident" | cut -d '/' -f 4)"
-    local archive_name build_dir pkg_dir
+    local build_dir pkg_dir
     archive_name="hab-$(echo "$pkg_ident" | cut -d '/' -f 3-4 | tr '/' '-')-$pkg_target"
     build_dir="$tmp_root/build"
     pkg_dir="$build_dir/${archive_name}"
