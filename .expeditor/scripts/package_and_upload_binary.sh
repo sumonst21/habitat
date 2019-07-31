@@ -24,6 +24,9 @@ ${hab_binary} pkg install core/wget
 ${hab_binary} pkg install core/zip
 
 download_and_repackage_binary
+
 echo "--- Uploading to S3"
-aws --profile chef-cd s3 cp "$pkg_artifact" "s3://chef-habitat-artifacts/files/habitat/$release_version/$archive_name" --acl public-read
-aws --profile chef-cd s3 cp "$pkg_artifact" "s3://chef-habitat-artifacts/files/habitat/$release_version/$archive_name.sha256sum" --acl public-read
+# FYI - the bucket name is not just for automate artifacts, and this will be fixed up later
+aws --profile chef-cd s3 cp "$pkg_artifact" "s3://chef-automate-artifacts/files/habitat/$release_version/$archive_name" --acl public-read
+aws --profile chef-cd s3 cp "$pkg_artifact" "s3://chef-automate-artifacts/files/habitat/$release_version/$archive_name.asc" --acl public-read
+aws --profile chef-cd s3 cp "$pkg_artifact" "s3://chef-automate-artifacts/files/habitat/$release_version/$archive_name.sha256sum" --acl public-read

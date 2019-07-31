@@ -122,10 +122,19 @@ download_and_repackage_binary() {
         exit_with "$target_hart has unknown TARGET=$pkg_target" 3
         ;;
     esac
+
+    # Generate our shasum
     popd >/dev/null
     pushd "$(dirname "$pkg_artifact")" >/dev/null
     sha256sum "$(basename "$pkg_artifact")" > "${pkg_artifact}.sha256sum"
     popd
+
+    # Sign our artifact
+    popd >/dev/null
+    pushd "$(dirname "$pkg_artifact")" >/dev/null
+    gpg --armor --digest-algo sha256 --default-key 2940ABA983EF826A --output "$(basename "$pkg_artifact").asc" --detach-sign "$(basename "$pkg_artifact")"
+    popd
+
     declare -g archive_name
     declare -g pkg_artifact
 }
