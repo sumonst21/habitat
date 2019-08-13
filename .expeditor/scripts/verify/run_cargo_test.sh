@@ -2,8 +2,7 @@
 
 set -eou pipefail
 
-# shellcheck source=./support/ci/shared.sh
-source ./support/ci/shared.sh
+source .expeditor/scripts/verify/shared.sh
 
 component=${1?component argument required}
 shift
