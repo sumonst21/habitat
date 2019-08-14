@@ -302,13 +302,21 @@ function Invoke-Begin {
 function Invoke-DefaultBegin {
 }
 
+# Returns the path with the studio directory stripped.
+# So c:\hab\studios\my-studio\hab\pkgs would unroot to 
+# \hab\pkgs
 function _Get-UnrootedPath($path) {
+  # Make sure $path is absolute and cannonicalized
   Push-Location $originalPath
   try {
     $path = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($path)
   }
   finally { Pop-Location }
+
+  # Find the Studio directory
   $prefixDrive = (Resolve-Path $originalPath).Drive.Root
+
+  # Strip the studio directory
   $strippedPrefix = $path
   if($path.StartsWith($prefixDrive)) {
     $strippedPrefix = $path.Substring($prefixDrive.length)
@@ -1294,7 +1302,7 @@ function Invoke-SetupEnvironmentWrapper {
     # from dependencies in the first place.
     foreach($k in $env["Buildtime"].keys) {
         $val = $env["Buildtime"][$k].Value
-        if(@("PATH", "LIB", "INCLUDE") -contains $k -or ($env["Buildtime"][$k].IsPath)) {
+        if(@("PATH", "LIB", "INCLUDE", "PSMODULEPATH") -contains $k -or ($env["Buildtime"][$k].IsPath)) {
             $val = _Resolve-Paths $val
         }
 
@@ -1366,15 +1374,18 @@ function __populate_environment_from_metafile($environment, $path_to_dep, $dep_i
   $envTable = __parse_metafile "$path_to_dep/${environment}_ENVIRONMENT"
   $envPathsTable = __parse_metafile "$path_to_dep/${environment}_ENVIRONMENT_PATHS"
 
+  # vars in ENVIRONMENT_PATHS files ares duplicated in ENVIRONMENT file
+  # to supportr backward compat with older sup/cli
+  # we will dedupe them here for the build
   foreach($key in $envPathsTable) {
     $envTable.Remove($key)
   }
 
-  __populate_environment_from_hashtable $environment, $envTable, $dep_ident, $false
-  __populate_environment_from_hashtable $environment, $envPathsTable, $dep_ident, $true
+  __populate_environment_from_hashtable $environment $envTable $dep_ident
+  __populate_environment_from_hashtable $environment $envPathsTable $dep_ident -IsPath
 }
 
-function __populate_environment_from_hashtable($environment, $table, $dep_ident, $IsPath) {
+function __populate_environment_from_hashtable($environment, $table, $dep_ident, [switch]$IsPath) {
     foreach($key in $table) {
       # Any values of `PATH`, `LIB`, and `INCLUDE` are skipped as we
       # will be computing these variables independently of the
