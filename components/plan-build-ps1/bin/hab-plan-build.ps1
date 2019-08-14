@@ -1386,7 +1386,7 @@ function __populate_environment_from_metafile($environment, $path_to_dep, $dep_i
 }
 
 function __populate_environment_from_hashtable($environment, $table, $dep_ident, [switch]$IsPath) {
-    foreach($key in $table) {
+    foreach($key in $table.keys) {
       # Any values of `PATH`, `LIB`, and `INCLUDE` are skipped as we
       # will be computing these variables independently of the
       # RUNTIME_ENVIRONMENT metadata files. Additionally, this acts
@@ -1439,7 +1439,7 @@ function __parse_metafile($metafilePath) {
 }
 
 # Internal function implementing core "set" logic for environment variables.
-function __set_env($EnvName, $VarName, $VarValue, $ident, $IsPath){
+function __set_env($Environment, $VarName, $VarValue, $ident, $IsPath){
     if($IsPath) { $VarValue = (_Get-UnrootedPath $VarValue) }
     $env[$Environment][$VarName] = @{
       Value = $VarValue
@@ -1449,7 +1449,7 @@ function __set_env($EnvName, $VarName, $VarValue, $ident, $IsPath){
 }
 
 # Internal function implementing core "push" logic for environment variables.
-function __push_env($EnvName, $VarName, $VarValue, $separator, $ident, $IsPath) {
+function __push_env($Environment, $VarName, $VarValue, $separator, $ident, $IsPath) {
     # If there is no current value (that is, $current_value == ""), we
     # can still push onto that with no loss of generality. Because
     # push_to_path also dedupes the result, this allows us to take
