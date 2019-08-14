@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euo pipefail
+set -xeuo pipefail
 
 source .expeditor/scripts/shared.sh
 
@@ -19,3 +19,5 @@ hab pkg install core/hab \
     --channel "${channel}" \
     --url="${HAB_BLDR_URL}"
 echo "--- Using $(hab --version)"
+
+useradd --system --no-create-home hab
