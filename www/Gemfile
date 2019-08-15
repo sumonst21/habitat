@@ -25,7 +25,7 @@ gem 'middleman-s3_sync'
 gem 'mime-types'
 gem 'nokogiri', '~> 1.8.2'
 gem 'redcarpet', '~> 3.4.0'
-gem 'rubocop', '~> 0.28.0', require: false
+gem 'rubocop', require: false
 gem 'scss_lint', require: false
 gem 'checker', require: false
 

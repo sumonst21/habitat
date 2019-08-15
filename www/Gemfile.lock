@@ -237,7 +237,7 @@ DEPENDENCIES
   nokogiri (~> 1.8.2)
   pry
   redcarpet (~> 3.4.0)
-  rubocop (~> 0.28.0)
+  rubocop
   scss_lint
   slim (>= 3.0)
   tzinfo-data
